@@ -16,8 +16,9 @@ class CardGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
+      padding: const EdgeInsets.all(8.0),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: MediaQuery.of(context).size.width > 600 ? 6 : 4,
         crossAxisSpacing: 8.0,
         mainAxisSpacing: 8.0,
         childAspectRatio: 2/3,
@@ -55,56 +56,66 @@ class PlayingCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color cardColor = card.suit == 'H' || card.suit == 'D' 
-        ? Colors.red 
-        : Colors.black;
+        ? Colors.red.shade700 
+        : Colors.black87;
+    
+    final bool isSmallScreen = MediaQuery.of(context).size.width < 360;
         
     return GestureDetector(
       onTap: onTap,
       child: Card(
         elevation: 4.0,
+        shadowColor: Colors.black45,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
+          borderRadius: BorderRadius.circular(12.0),
           side: interactive 
               ? BorderSide(color: Theme.of(context).colorScheme.primary, width: 2)
               : BorderSide.none,
         ),
         child: Container(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(6.0),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Colors.white, Colors.grey.shade200],
+              colors: [Colors.white, Colors.grey.shade100],
             ),
-            borderRadius: BorderRadius.circular(8.0),
+            borderRadius: BorderRadius.circular(12.0),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
+          child: FittedBox(
+            fit: BoxFit.contain,
+            child: SizedBox(
+              width: isSmallScreen ? 50 : 70,
+              height: isSmallScreen ? 75 : 105,
+              child: Column(
                 children: [
-                  Text('$index. ', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      '$index',
+                      style: TextStyle(fontSize: isSmallScreen ? 8 : 10, color: Colors.grey),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    card.value,
+                    style: TextStyle(
+                      fontSize: isSmallScreen ? 18 : 24,
+                      fontWeight: FontWeight.bold,
+                      color: cardColor,
+                    ),
+                  ),
+                  Text(
+                    Deck.getSuitSymbol(card.suit),
+                    style: TextStyle(
+                      fontSize: isSmallScreen ? 24 : 32,
+                      color: cardColor,
+                    ),
+                  ),
+                  const Spacer(),
                 ],
               ),
-              const Spacer(),
-              Text(
-                card.value,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: cardColor,
-                ),
-              ),
-              Text(
-                Deck.getSuitSymbol(card.suit),
-                style: TextStyle(
-                  fontSize: 32,
-                  color: cardColor,
-                ),
-              ),
-              const Spacer(),
-            ],
+            ),
           ),
         ),
       ),

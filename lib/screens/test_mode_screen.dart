@@ -199,59 +199,99 @@ class _TestModeScreenState extends State<TestModeScreen> {
           Expanded(
             flex: 1,
             child: Container(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
               color: Colors.grey.shade100,
-              child: guessedDeck.isEmpty
-                  ? const Center(
-                      child: Text('Select cards in the correct order'),
-                    )
-                  : ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: guessedDeck.length,
-                      itemBuilder: (context, index) {
-                        final card = guessedDeck[index];
-                        return GestureDetector(
-                          onTap: () => _removeCardFromGuess(index),
-                          child: Container(
-                            width: 60,
-                            margin: const EdgeInsets.all(4.0),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              border: Border.all(color: Colors.grey.shade300),
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  card.value,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: card.suit == 'H' || card.suit == 'D'
-                                        ? Colors.red
-                                        : Colors.black,
-                                  ),
-                                ),
-                                Text(
-                                  Deck.getSuitSymbol(card.suit),
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    color: card.suit == 'H' || card.suit == 'D'
-                                        ? Colors.red
-                                        : Colors.black,
-                                  ),
-                                ),
-                                Text(
-                                  '${index + 1}',
-                                  style: const TextStyle(fontSize: 10, color: Colors.grey),
-                                ),
-                              ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                    child: Text(
+                      'Selected Cards: ${guessedDeck.length}/52',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: guessedDeck.isEmpty
+                      ? Center(
+                          child: Text(
+                            'Select cards in the correct order',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontStyle: FontStyle.italic,
                             ),
                           ),
-                        );
-                      },
-                    ),
+                        )
+                      : ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: guessedDeck.length,
+                          itemBuilder: (context, index) {
+                            final card = guessedDeck[index];
+                            return GestureDetector(
+                              onTap: () => _removeCardFromGuess(index),
+                              child: Tooltip(
+                                message: 'Tap to remove',
+                                child: Container(
+                                  width: 50,
+                                  margin: const EdgeInsets.all(4.0),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    border: Border.all(color: Colors.grey.shade300),
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black12,
+                                        blurRadius: 2,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        card.value,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: card.suit == 'H' || card.suit == 'D'
+                                              ? Colors.red.shade700
+                                              : Colors.black87,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Text(
+                                        Deck.getSuitSymbol(card.suit),
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          color: card.suit == 'H' || card.suit == 'D'
+                                              ? Colors.red.shade700
+                                              : Colors.black87,
+                                        ),
+                                      ),
+                                      Container(
+                                        width: double.infinity,
+                                        color: Colors.grey.shade100,
+                                        padding: const EdgeInsets.symmetric(vertical: 2),
+                                        child: Text(
+                                          '${index + 1}',
+                                          style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                  ),
+                ],
+              ),
             ),
           ),
           Expanded(
