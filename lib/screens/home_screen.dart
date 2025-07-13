@@ -98,90 +98,201 @@ class _HomeScreenState extends State<HomeScreen> {
         child: SafeArea(
           child: SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.style,
-                      size: 80,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Card Memory Trainer',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Train your memory by memorizing a deck of cards',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[300]
-                          : Colors.black54,
-                    ),
-                  ),
-                  const SizedBox(height: 48),
-                  Card(
-                    elevation: 6,
-                    shadowColor: Colors.black26,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        children: [
-                          _buildMenuButton(
-                            label: 'Shuffle Deck',
-                            icon: Icons.shuffle,
-                            onPressed: isLoading ? null : _shuffleDeck,
-                            isPrimary: true,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              // Use LayoutBuilder to adapt to screen orientation
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Check if the screen is in landscape mode
+                  final bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+                  
+                  if (isLandscape) {
+                    // Landscape layout
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Left side: Logo and title
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.style,
+                                  size: 60,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Card Memory Trainer',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Train your memory by memorizing a deck of cards',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.grey[300]
+                                      : Colors.black54,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Challenge yourself to memorize all 52 cards!',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontStyle: FontStyle.italic,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 16),
-                          _buildMenuButton(
-                            label: 'View Current Deck',
-                            icon: Icons.visibility,
-                            onPressed: _viewCurrentDeck,
+                        ),
+                        const SizedBox(width: 20),
+                        // Right side: Menu buttons
+                        Expanded(
+                          flex: 3,
+                          child: Card(
+                            elevation: 6,
+                            shadowColor: Colors.black26,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildMenuButton(
+                                    label: 'Shuffle Deck',
+                                    icon: Icons.shuffle,
+                                    onPressed: isLoading ? null : _shuffleDeck,
+                                    isPrimary: true,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _buildMenuButton(
+                                    label: 'View Current Deck',
+                                    icon: Icons.visibility,
+                                    onPressed: _viewCurrentDeck,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _buildMenuButton(
+                                    label: 'Test Your Memory',
+                                    icon: Icons.psychology,
+                                    onPressed: _startTestMode,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _buildMenuButton(
+                                    label: 'View Scoreboard',
+                                    icon: Icons.leaderboard,
+                                    onPressed: _viewScoreboard,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 16),
-                          _buildMenuButton(
-                            label: 'Test Your Memory',
-                            icon: Icons.psychology,
-                            onPressed: _startTestMode,
+                        ),
+                      ],
+                    );
+                  } else {
+                    // Portrait layout (original)
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            shape: BoxShape.circle,
                           ),
-                          const SizedBox(height: 16),
-                          _buildMenuButton(
-                            label: 'View Scoreboard',
-                            icon: Icons.leaderboard,
-                            onPressed: _viewScoreboard,
+                          child: Icon(
+                            Icons.style,
+                            size: 80,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Challenge yourself to memorize all 52 cards!',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontStyle: FontStyle.italic,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ],
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Card Memory Trainer',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Train your memory by memorizing a deck of cards',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[300]
+                                : Colors.black54,
+                          ),
+                        ),
+                        const SizedBox(height: 48),
+                        Card(
+                          elevation: 6,
+                          shadowColor: Colors.black26,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              children: [
+                                _buildMenuButton(
+                                  label: 'Shuffle Deck',
+                                  icon: Icons.shuffle,
+                                  onPressed: isLoading ? null : _shuffleDeck,
+                                  isPrimary: true,
+                                ),
+                                const SizedBox(height: 16),
+                                _buildMenuButton(
+                                  label: 'View Current Deck',
+                                  icon: Icons.visibility,
+                                  onPressed: _viewCurrentDeck,
+                                ),
+                                const SizedBox(height: 16),
+                                _buildMenuButton(
+                                  label: 'Test Your Memory',
+                                  icon: Icons.psychology,
+                                  onPressed: _startTestMode,
+                                ),
+                                const SizedBox(height: 16),
+                                _buildMenuButton(
+                                  label: 'View Scoreboard',
+                                  icon: Icons.leaderboard,
+                                  onPressed: _viewScoreboard,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Challenge yourself to memorize all 52 cards!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontStyle: FontStyle.italic,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                },
               ),
             ),
           ),

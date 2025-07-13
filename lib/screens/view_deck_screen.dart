@@ -43,10 +43,33 @@ class _ViewDeckScreenState extends State<ViewDeckScreen> {
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(8.0),
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
-            : CardGrid(deck: deck),
+            : OrientationBuilder(
+                builder: (context, orientation) {
+                  // Using the same CardGrid but with additional container settings
+                  // based on orientation
+                  return Container(
+                    // Add a gradient background
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Theme.of(context).colorScheme.background,
+                          Theme.of(context).colorScheme.surface.withOpacity(0.9),
+                        ],
+                      ),
+                    ),
+                    // Use different padding based on orientation
+                    padding: orientation == Orientation.landscape 
+                      ? const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0)
+                      : const EdgeInsets.all(8.0),
+                    child: CardGrid(deck: deck),
+                  );
+                },
+              ),
       ),
     );
   }

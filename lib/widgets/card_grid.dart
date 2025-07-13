@@ -15,13 +15,45 @@ class CardGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Detect orientation and screen size
+    final orientation = MediaQuery.of(context).orientation;
+    final screenSize = MediaQuery.of(context).size;
+    
+    // Adjust grid based on orientation and screen size
+    int crossAxisCount;
+    double aspectRatio;
+    
+    if (orientation == Orientation.landscape) {
+      // In landscape mode, show more cards horizontally
+      if (screenSize.width > 900) { // Large tablets
+        crossAxisCount = 8;
+      } else if (screenSize.width > 600) { // Small tablets and large phones
+        crossAxisCount = 6;
+      } else { // Most phones in landscape
+        crossAxisCount = 5;
+      }
+      // Slightly adjust aspect ratio for landscape
+      aspectRatio = 2/3.2;
+    } else {
+      // Portrait mode
+      if (screenSize.width > 600) { // Tablets in portrait
+        crossAxisCount = 6;
+      } else if (screenSize.width > 400) { // Large phones in portrait
+        crossAxisCount = 4;
+      } else { // Small phones in portrait
+        crossAxisCount = 3;
+      }
+      // Standard aspect ratio for portrait
+      aspectRatio = 2/3;
+    }
+    
     return GridView.builder(
       padding: const EdgeInsets.all(8.0),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: MediaQuery.of(context).size.width > 600 ? 6 : 4,
+        crossAxisCount: crossAxisCount,
         crossAxisSpacing: 8.0,
         mainAxisSpacing: 8.0,
-        childAspectRatio: 2/3,
+        childAspectRatio: aspectRatio,
       ),
       itemCount: deck.length,
       itemBuilder: (context, index) {
