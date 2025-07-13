@@ -200,7 +200,9 @@ class _TestModeScreenState extends State<TestModeScreen> {
             flex: 1,
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-              color: Colors.grey.shade100,
+              color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF202020)
+                : Colors.grey.shade100,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -238,12 +240,20 @@ class _TestModeScreenState extends State<TestModeScreen> {
                                   width: 50,
                                   margin: const EdgeInsets.all(4.0),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    border: Border.all(color: Colors.grey.shade300),
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                      ? const Color(0xFF2C2C2C)
+                                      : Colors.white,
+                                    border: Border.all(
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                        ? Colors.grey.shade700
+                                        : Colors.grey.shade300,
+                                    ),
                                     borderRadius: BorderRadius.circular(10.0),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black12,
+                                        color: Theme.of(context).brightness == Brightness.dark
+                                          ? Colors.black54
+                                          : Colors.black12,
                                         blurRadius: 2,
                                         offset: const Offset(0, 1),
                                       ),
@@ -251,34 +261,47 @@ class _TestModeScreenState extends State<TestModeScreen> {
                                   ),
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        card.value,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: card.suit == 'H' || card.suit == 'D'
-                                              ? Colors.red.shade700
-                                              : Colors.black87,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      Text(
-                                        Deck.getSuitSymbol(card.suit),
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          color: card.suit == 'H' || card.suit == 'D'
-                                              ? Colors.red.shade700
-                                              : Colors.black87,
-                                        ),
-                                      ),
+                                    children: [                                  Text(
+                                    card.value,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: card.suit == 'H' || card.suit == 'D'
+                                          ? (Theme.of(context).brightness == Brightness.dark 
+                                              ? Colors.red.shade300 
+                                              : Colors.red.shade700)
+                                          : (Theme.of(context).brightness == Brightness.dark 
+                                              ? Colors.white 
+                                              : Colors.black87),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),                                  Text(
+                                    Deck.getSuitSymbol(card.suit),
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: card.suit == 'H' || card.suit == 'D'
+                                          ? (Theme.of(context).brightness == Brightness.dark 
+                                              ? Colors.red.shade300 
+                                              : Colors.red.shade700)
+                                          : (Theme.of(context).brightness == Brightness.dark 
+                                              ? Colors.white 
+                                              : Colors.black87),
+                                    ),
+                                  ),
                                       Container(
                                         width: double.infinity,
-                                        color: Colors.grey.shade100,
+                                        color: Theme.of(context).brightness == Brightness.dark 
+                                          ? Colors.grey.shade800 
+                                          : Colors.grey.shade100,
                                         padding: const EdgeInsets.symmetric(vertical: 2),
                                         child: Text(
                                           '${index + 1}',
-                                          style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                          style: TextStyle(
+                                            fontSize: 10, 
+                                            color: Theme.of(context).brightness == Brightness.dark
+                                              ? Colors.grey.shade400
+                                              : Colors.grey,
+                                          ),
                                           textAlign: TextAlign.center,
                                         ),
                                       ),

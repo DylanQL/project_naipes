@@ -55,9 +55,14 @@ class PlayingCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color cardColor = card.suit == 'H' || card.suit == 'D' 
-        ? Colors.red.shade700 
-        : Colors.black87;
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    Color cardColor;
+    if (card.suit == 'H' || card.suit == 'D') {
+      cardColor = isDarkMode ? Colors.red.shade300 : Colors.red.shade700;
+    } else {
+      cardColor = isDarkMode ? Colors.white : Colors.black87;
+    }
     
     final bool isSmallScreen = MediaQuery.of(context).size.width < 360;
         
@@ -65,7 +70,7 @@ class PlayingCardWidget extends StatelessWidget {
       onTap: onTap,
       child: Card(
         elevation: 4.0,
-        shadowColor: Colors.black45,
+        shadowColor: isDarkMode ? Colors.black87 : Colors.black38,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0),
           side: interactive 
@@ -78,9 +83,14 @@ class PlayingCardWidget extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Colors.white, Colors.grey.shade100],
+              colors: isDarkMode 
+                ? [const Color(0xFF2C2C2C), const Color(0xFF1A1A1A)]
+                : [Colors.white, Colors.grey.shade100],
             ),
             borderRadius: BorderRadius.circular(12.0),
+            border: isDarkMode
+                ? Border.all(color: Colors.grey.shade800, width: 0.5)
+                : null,
           ),
           child: FittedBox(
             fit: BoxFit.contain,
@@ -93,7 +103,10 @@ class PlayingCardWidget extends StatelessWidget {
                     alignment: Alignment.topLeft,
                     child: Text(
                       '$index',
-                      style: TextStyle(fontSize: isSmallScreen ? 8 : 10, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 8 : 10, 
+                        color: isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                      ),
                     ),
                   ),
                   const Spacer(),
