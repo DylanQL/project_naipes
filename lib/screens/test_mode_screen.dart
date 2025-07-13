@@ -200,9 +200,19 @@ class _TestModeScreenState extends State<TestModeScreen> {
             flex: 1,
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-              color: Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF202020)
-                : Colors.grey.shade100,
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF191925)
+                  : Colors.grey.shade100,
+                border: Theme.of(context).brightness == Brightness.dark
+                  ? Border(
+                      bottom: BorderSide(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                        width: 1.0,
+                      ),
+                    )
+                  : null,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -219,11 +229,39 @@ class _TestModeScreenState extends State<TestModeScreen> {
                   Expanded(
                     child: guessedDeck.isEmpty
                       ? Center(
-                          child: Text(
-                            'Select cards in the correct order',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontStyle: FontStyle.italic,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).brightness == Brightness.dark
+                                ? Theme.of(context).colorScheme.primary.withOpacity(0.15)
+                                : Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.touch_app,
+                                  size: 18,
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                    ? Theme.of(context).colorScheme.primary.withOpacity(0.7)
+                                    : Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Select cards in the correct order',
+                                  style: TextStyle(
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                      ? Theme.of(context).colorScheme.onSurface.withOpacity(0.8)
+                                      : Colors.grey.shade700,
+                                    fontStyle: FontStyle.italic,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         )
@@ -241,20 +279,28 @@ class _TestModeScreenState extends State<TestModeScreen> {
                                   margin: const EdgeInsets.all(4.0),
                                   decoration: BoxDecoration(
                                     color: Theme.of(context).brightness == Brightness.dark
-                                      ? const Color(0xFF2C2C2C)
+                                      ? const Color(0xFF2A2A3A)
                                       : Colors.white,
                                     border: Border.all(
                                       color: Theme.of(context).brightness == Brightness.dark
-                                        ? Colors.grey.shade700
+                                        ? const Color(0xFF4A4A6A)
                                         : Colors.grey.shade300,
+                                      width: Theme.of(context).brightness == Brightness.dark ? 1.0 : 0.5,
                                     ),
                                     borderRadius: BorderRadius.circular(10.0),
+                                    gradient: Theme.of(context).brightness == Brightness.dark
+                                      ? const LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [Color(0xFF2A2A3A), Color(0xFF1A1A28)],
+                                        )
+                                      : null,
                                     boxShadow: [
                                       BoxShadow(
                                         color: Theme.of(context).brightness == Brightness.dark
                                           ? Colors.black54
                                           : Colors.black12,
-                                        blurRadius: 2,
+                                        blurRadius: Theme.of(context).brightness == Brightness.dark ? 4 : 2,
                                         offset: const Offset(0, 1),
                                       ),
                                     ],
@@ -268,11 +314,14 @@ class _TestModeScreenState extends State<TestModeScreen> {
                                       fontWeight: FontWeight.bold,
                                       color: card.suit == 'H' || card.suit == 'D'
                                           ? (Theme.of(context).brightness == Brightness.dark 
-                                              ? Colors.red.shade300 
+                                              ? const Color(0xFFFF7070)
                                               : Colors.red.shade700)
                                           : (Theme.of(context).brightness == Brightness.dark 
-                                              ? Colors.white 
+                                              ? const Color(0xFFDDDDDD)
                                               : Colors.black87),
+                                      shadows: Theme.of(context).brightness == Brightness.dark
+                                        ? [Shadow(color: Colors.black54, blurRadius: 1, offset: const Offset(0, 1))]
+                                        : null,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),                                  Text(
@@ -281,25 +330,29 @@ class _TestModeScreenState extends State<TestModeScreen> {
                                       fontSize: 18,
                                       color: card.suit == 'H' || card.suit == 'D'
                                           ? (Theme.of(context).brightness == Brightness.dark 
-                                              ? Colors.red.shade300 
+                                              ? const Color(0xFFFF7070)
                                               : Colors.red.shade700)
                                           : (Theme.of(context).brightness == Brightness.dark 
-                                              ? Colors.white 
+                                              ? const Color(0xFFDDDDDD)
                                               : Colors.black87),
+                                      shadows: Theme.of(context).brightness == Brightness.dark
+                                        ? [Shadow(color: Colors.black54, blurRadius: 1, offset: const Offset(0, 1))]
+                                        : null,
                                     ),
                                   ),
                                       Container(
                                         width: double.infinity,
                                         color: Theme.of(context).brightness == Brightness.dark 
-                                          ? Colors.grey.shade800 
+                                          ? const Color(0xFF1A1A28)
                                           : Colors.grey.shade100,
                                         padding: const EdgeInsets.symmetric(vertical: 2),
                                         child: Text(
                                           '${index + 1}',
                                           style: TextStyle(
                                             fontSize: 10, 
+                                            fontWeight: FontWeight.w500,
                                             color: Theme.of(context).brightness == Brightness.dark
-                                              ? Colors.grey.shade400
+                                              ? const Color(0xFFAAAABB)
                                               : Colors.grey,
                                           ),
                                           textAlign: TextAlign.center,

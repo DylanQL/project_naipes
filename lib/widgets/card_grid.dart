@@ -57,11 +57,14 @@ class PlayingCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
+    // Colores específicos para las cartas en modo oscuro
     Color cardColor;
     if (card.suit == 'H' || card.suit == 'D') {
-      cardColor = isDarkMode ? Colors.red.shade300 : Colors.red.shade700;
+      // Corazones y diamantes - rojo
+      cardColor = isDarkMode ? const Color(0xFFFF7070) : Colors.red.shade700;
     } else {
-      cardColor = isDarkMode ? Colors.white : Colors.black87;
+      // Picas y tréboles - negro/blanco
+      cardColor = isDarkMode ? const Color(0xFFDDDDDD) : Colors.black87;
     }
     
     final bool isSmallScreen = MediaQuery.of(context).size.width < 360;
@@ -69,13 +72,15 @@ class PlayingCardWidget extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        elevation: 4.0,
+        elevation: isDarkMode ? 8.0 : 4.0,
         shadowColor: isDarkMode ? Colors.black87 : Colors.black38,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0),
           side: interactive 
               ? BorderSide(color: Theme.of(context).colorScheme.primary, width: 2)
-              : BorderSide.none,
+              : isDarkMode
+                  ? BorderSide(color: const Color(0xFF444444), width: 1.0)
+                  : BorderSide.none,
         ),
         child: Container(
           padding: const EdgeInsets.all(6.0),
@@ -84,13 +89,17 @@ class PlayingCardWidget extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: isDarkMode 
-                ? [const Color(0xFF2C2C2C), const Color(0xFF1A1A1A)]
+                ? [const Color(0xFF2A2A3A), const Color(0xFF1A1A28)]
                 : [Colors.white, Colors.grey.shade100],
             ),
             borderRadius: BorderRadius.circular(12.0),
-            border: isDarkMode
-                ? Border.all(color: Colors.grey.shade800, width: 0.5)
-                : null,
+            boxShadow: isDarkMode ? [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.5),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              )
+            ] : null,
           ),
           child: FittedBox(
             fit: BoxFit.contain,
@@ -101,11 +110,19 @@ class PlayingCardWidget extends StatelessWidget {
                 children: [
                   Align(
                     alignment: Alignment.topLeft,
-                    child: Text(
-                      '$index',
-                      style: TextStyle(
-                        fontSize: isSmallScreen ? 8 : 10, 
-                        color: isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? const Color(0xFF333344).withOpacity(0.7) : null,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '$index',
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 8 : 10, 
+                          color: isDarkMode ? const Color(0xFFBBBBCC) : Colors.grey,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
@@ -116,6 +133,13 @@ class PlayingCardWidget extends StatelessWidget {
                       fontSize: isSmallScreen ? 18 : 24,
                       fontWeight: FontWeight.bold,
                       color: cardColor,
+                      shadows: isDarkMode ? [
+                        Shadow(
+                          color: Colors.black.withOpacity(0.7),
+                          blurRadius: 1,
+                          offset: const Offset(0, 1),
+                        )
+                      ] : null,
                     ),
                   ),
                   Text(
@@ -123,6 +147,13 @@ class PlayingCardWidget extends StatelessWidget {
                     style: TextStyle(
                       fontSize: isSmallScreen ? 24 : 32,
                       color: cardColor,
+                      shadows: isDarkMode ? [
+                        Shadow(
+                          color: Colors.black.withOpacity(0.7),
+                          blurRadius: 1,
+                          offset: const Offset(0, 1),
+                        )
+                      ] : null,
                     ),
                   ),
                   const Spacer(),

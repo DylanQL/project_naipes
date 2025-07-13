@@ -85,34 +85,63 @@ class MyApp extends StatelessWidget {
   }
   
   ThemeData _buildDarkTheme() {
+    // Paleta de colores específica para modo oscuro
+    const primaryColor = Color(0xFF6A77E5);  // Tono azul-indigo más suave
+    const backgroundColor = Color(0xFF121212);  // Fondo negro suave
+    const surfaceColor = Color(0xFF1E1E1E);  // Superficie un poco más clara que el fondo
+    const accentColor = Color(0xFF94A3FF);  // Acento azul claro
+    
     return ThemeData(
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.indigo,
+      colorScheme: ColorScheme(
+        primary: primaryColor,
+        onPrimary: Colors.white,
+        secondary: accentColor,
+        onSecondary: Colors.black,
+        background: backgroundColor,
+        onBackground: const Color(0xFFE1E1E1), // Texto casi blanco sobre fondo
+        surface: surfaceColor,
+        onSurface: const Color(0xFFE1E1E1),
+        error: const Color(0xFFCF6679), // Rojo suave para errores
+        onError: Colors.black,
         brightness: Brightness.dark,
+        tertiary: const Color(0xFF9277E5), // Tono púrpura para acentos secundarios
       ),
       useMaterial3: true,
       cardTheme: CardTheme(
         elevation: 4,
         shadowColor: Colors.black54,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        color: const Color(0xFF252525), // Color de tarjeta ligeramente más claro
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.grey.shade800, width: 0.5),
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          elevation: 3,
+          elevation: 4,
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         centerTitle: true,
         elevation: 4,
-        backgroundColor: Colors.indigo.shade900,
+        backgroundColor: Color(0xFF1A1A2E), // Azul muy oscuro
         foregroundColor: Colors.white,
       ),
-      scaffoldBackgroundColor: const Color(0xFF121212),
+      scaffoldBackgroundColor: backgroundColor,
+      iconTheme: const IconThemeData(color: Color(0xFFBBBBBB)), // Iconos con gris claro
+      textTheme: Typography.whiteMountainView.apply(
+        bodyColor: const Color(0xFFE1E1E1),
+        displayColor: Colors.white,
+      ),
       brightness: Brightness.dark,
+      dialogBackgroundColor: surfaceColor,
+      dividerColor: Colors.grey.shade800,
     );
   }
 }
