@@ -44,7 +44,7 @@ class MyApp extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
     
     return MaterialApp(
-      title: 'Card Memory Trainer',
+      title: 'Suan Cards',
       debugShowCheckedModeBanner: false,
       theme: _buildLightTheme(),
       darkTheme: _buildDarkTheme(),

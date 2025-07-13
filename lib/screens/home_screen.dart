@@ -66,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Card Memory Trainer'),
+        title: const Text('Suan Cards'),
         backgroundColor: Theme.of(context).colorScheme.primary,
         actions: [
           Consumer<ThemeProvider>(
@@ -122,15 +122,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                   color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(
-                                  Icons.style,
-                                  size: 60,
-                                  color: Theme.of(context).colorScheme.primary,
+                                child: Image.asset(
+                                  'assets/images/logo_suan_cars.png',
+                                  width: 60,
+                                  height: 60,
                                 ),
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'Card Memory Trainer',
+                                'Suan Cards',
                                 style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
@@ -216,15 +216,15 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(
-                            Icons.style,
-                            size: 80,
-                            color: Theme.of(context).colorScheme.primary,
+                          child: Image.asset(
+                            'assets/images/logo_suan_cars.png',
+                            width: 80,
+                            height: 80,
                           ),
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          'Card Memory Trainer',
+                          'Suan Cards',
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
