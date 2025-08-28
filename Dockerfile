@@ -1,28 +1,47 @@
 FROM debian:bullseye AS build-env
 
-# Instalar dependencias
-RUN apt-get update 
-RUN apt-get install -y curl git wget unzip gdb libstdc++6 libglu1-mesa fonts-droid lib32stdc++6 python3 psmisc libgtk-3-0 xz-utils
-RUN apt-get clean
+# Instalar dependencias (combinadas en una sola capa para reducir el tamaño de la imagen)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    git \
+    wget \
+    unzip \
+    gdb \
+    libstdc++6 \
+    libglu1-mesa \
+    fonts-droid-fallback \
+    lib32stdc++6 \
+    python3 \
+    psmisc \
+    libgtk-3-0 \
+    xz-utils \
+    ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Descargar Flutter SDK - Usamos una versión específica para mayor estabilidad
-RUN git clone -b stable https://github.com/flutter/flutter.git /usr/local/flutter
+RUN git clone -b stable --depth 1 https://github.com/flutter/flutter.git /usr/local/flutter
 
 # Añadir flutter al PATH
 ENV PATH="/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin:${PATH}"
 
-# Ejecutar flutter doctor y preparar el entorno para web
-RUN flutter doctor -v
-RUN flutter config --enable-web
-RUN flutter precache --web
+# Configurar Flutter para web y verificar la instalación
+RUN flutter config --no-analytics && \
+    flutter config --enable-web && \
+    flutter doctor -v
 
-# Copiar los archivos del proyecto
-COPY . /app/
+# Primero copiamos solo los archivos necesarios para resolver dependencias
+COPY pubspec.* /app/
 WORKDIR /app/
 
-# Obtener dependencias
+# Obtener dependencias (esto se almacenará en caché si no cambian los archivos pubspec)
 RUN flutter pub get
-# Construir para la web
+
+# Ahora copiamos el resto del proyecto
+COPY . /app/
+
+# Construir para la web con optimización
 RUN flutter build web --release
 
 # Etapa de producción
