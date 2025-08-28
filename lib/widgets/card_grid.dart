@@ -6,6 +6,8 @@ class CardGrid extends StatelessWidget {
   final bool interactive;
   final bool forDesktop;
   final Function(PlayingCard)? onCardTap;
+  final List<PlayingCard>? selectedCards;
+  final bool hideSelectedCards;
 
   const CardGrid({
     super.key, 
@@ -13,6 +15,8 @@ class CardGrid extends StatelessWidget {
     this.interactive = false,
     this.forDesktop = false,
     this.onCardTap,
+    this.selectedCards,
+    this.hideSelectedCards = false,
   });
 
   @override
@@ -61,25 +65,30 @@ class CardGrid extends StatelessWidget {
       aspectRatio = 2/3;
     }
     
+    // Filtrar las cartas seleccionadas si hideSelectedCards es true
+    List<PlayingCard> visibleDeck = deck;
+    if (hideSelectedCards && selectedCards != null) {
+      visibleDeck = deck.where((card) => !selectedCards!.contains(card)).toList();
+    }
+    
     return GridView.builder(
-      padding: EdgeInsets.all(forDesktop ? 16.0 : 8.0),
+      padding: const EdgeInsets.all(8.0),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
-        crossAxisSpacing: forDesktop ? 16.0 : 8.0,
-        mainAxisSpacing: forDesktop ? 16.0 : 8.0,
         childAspectRatio: aspectRatio,
+        crossAxisSpacing: 4,
+        mainAxisSpacing: 4,
       ),
-      itemCount: deck.length,
+      itemCount: visibleDeck.length,
       itemBuilder: (context, index) {
-        final card = deck[index];
+        final card = visibleDeck[index];
+        
         return PlayingCardWidget(
           card: card,
-          index: index + 1,
+          index: index,
+          onTap: onCardTap != null ? () => onCardTap!(card) : null,
           interactive: interactive,
           forDesktop: forDesktop,
-          onTap: interactive && onCardTap != null 
-            ? () => onCardTap!(card) 
-            : null,
         );
       },
     );
