@@ -60,7 +60,7 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.light,
       ),
       useMaterial3: true,
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 4,
         shadowColor: Colors.black26,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -96,9 +96,7 @@ class MyApp extends StatelessWidget {
         primary: primaryColor,
         onPrimary: Colors.white,
         secondary: accentColor,
-        onSecondary: Colors.black,
-        background: backgroundColor,
-        onBackground: const Color(0xFFE1E1E1), // Texto casi blanco sobre fondo
+        onSecondary: Colors.black, // Texto casi blanco sobre fondo
         surface: surfaceColor,
         onSurface: const Color(0xFFE1E1E1),
         error: const Color(0xFFCF6679), // Rojo suave para errores
@@ -107,7 +105,7 @@ class MyApp extends StatelessWidget {
         tertiary: const Color(0xFF9277E5), // Tono púrpura para acentos secundarios
       ),
       useMaterial3: true,
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 4,
         shadowColor: Colors.black54,
         color: const Color(0xFF252525), // Color de tarjeta ligeramente más claro
@@ -140,8 +138,7 @@ class MyApp extends StatelessWidget {
         displayColor: Colors.white,
       ),
       brightness: Brightness.dark,
-      dialogBackgroundColor: surfaceColor,
-      dividerColor: Colors.grey.shade800,
+      dividerColor: Colors.grey.shade800, dialogTheme: DialogThemeData(backgroundColor: surfaceColor),
     );
   }
 }
