@@ -1,20 +1,22 @@
-import 'dart:io';
+// Use dart:io conditionally
+import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'screens/home_screen.dart';
 import 'package:provider/provider.dart';
+
+// Import platform-specific database implementations conditionally
+import 'services/database_service.dart';
 
 void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize SQLite for all platforms, especially for desktop
-  if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
-    // Initialize FFI
-    sqfliteFfiInit();
-    // Change the default factory
-    databaseFactory = databaseFactoryFfi;
+  // Initialize database based on platform
+  if (!kIsWeb) {
+    await initDatabaseForNative();
+  } else {
+    // Web implementation will be handled in database_service.dart
   }
   
   runApp(
