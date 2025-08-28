@@ -4,12 +4,14 @@ import '../models/card_model.dart';
 class CardGrid extends StatelessWidget {
   final List<PlayingCard> deck;
   final bool interactive;
+  final bool forDesktop;
   final Function(PlayingCard)? onCardTap;
 
   const CardGrid({
     super.key, 
     required this.deck, 
     this.interactive = false,
+    this.forDesktop = false,
     this.onCardTap,
   });
 
@@ -19,12 +21,24 @@ class CardGrid extends StatelessWidget {
     final orientation = MediaQuery.of(context).orientation;
     final screenSize = MediaQuery.of(context).size;
     
-    // Adjust grid based on orientation and screen size
+    // Adjust grid based on orientation, screen size and desktop mode
     int crossAxisCount;
     double aspectRatio;
     
-    if (orientation == Orientation.landscape) {
-      // In landscape mode, show more cards horizontally
+    if (forDesktop) {
+      // Desktop optimized layout
+      if (screenSize.width > 1600) {
+        crossAxisCount = 13; // Full deck width for very large screens
+        aspectRatio = 2/3;
+      } else if (screenSize.width > 1200) {
+        crossAxisCount = 10; // For large desktop screens
+        aspectRatio = 2/3;
+      } else {
+        crossAxisCount = 8; // For smaller desktop screens
+        aspectRatio = 2/3;
+      }
+    } else if (orientation == Orientation.landscape) {
+      // In landscape mode for mobile/tablet, show more cards horizontally
       if (screenSize.width > 900) { // Large tablets
         crossAxisCount = 8;
       } else if (screenSize.width > 600) { // Small tablets and large phones
@@ -35,7 +49,7 @@ class CardGrid extends StatelessWidget {
       // Slightly adjust aspect ratio for landscape
       aspectRatio = 2/3.2;
     } else {
-      // Portrait mode
+      // Portrait mode for mobile/tablet
       if (screenSize.width > 600) { // Tablets in portrait
         crossAxisCount = 6;
       } else if (screenSize.width > 400) { // Large phones in portrait
@@ -48,11 +62,11 @@ class CardGrid extends StatelessWidget {
     }
     
     return GridView.builder(
-      padding: const EdgeInsets.all(8.0),
+      padding: EdgeInsets.all(forDesktop ? 16.0 : 8.0),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
-        crossAxisSpacing: 8.0,
-        mainAxisSpacing: 8.0,
+        crossAxisSpacing: forDesktop ? 16.0 : 8.0,
+        mainAxisSpacing: forDesktop ? 16.0 : 8.0,
         childAspectRatio: aspectRatio,
       ),
       itemCount: deck.length,
@@ -62,6 +76,7 @@ class CardGrid extends StatelessWidget {
           card: card,
           index: index + 1,
           interactive: interactive,
+          forDesktop: forDesktop,
           onTap: interactive && onCardTap != null 
             ? () => onCardTap!(card) 
             : null,
@@ -75,6 +90,7 @@ class PlayingCardWidget extends StatelessWidget {
   final PlayingCard card;
   final int index;
   final bool interactive;
+  final bool forDesktop;
   final VoidCallback? onTap;
 
   const PlayingCardWidget({
@@ -82,6 +98,7 @@ class PlayingCardWidget extends StatelessWidget {
     required this.card,
     required this.index,
     this.interactive = false,
+    this.forDesktop = false,
     this.onTap,
   });
 
@@ -104,10 +121,10 @@ class PlayingCardWidget extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        elevation: isDarkMode ? 8.0 : 4.0,
+        elevation: isDarkMode ? 8.0 : (forDesktop ? 6.0 : 4.0),
         shadowColor: isDarkMode ? Colors.black87 : Colors.black38,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.0),
+          borderRadius: BorderRadius.circular(forDesktop ? 16.0 : 12.0),
           side: interactive 
               ? BorderSide(color: Theme.of(context).colorScheme.primary, width: 2)
               : isDarkMode
@@ -115,7 +132,7 @@ class PlayingCardWidget extends StatelessWidget {
                   : BorderSide.none,
         ),
         child: Container(
-          padding: const EdgeInsets.all(6.0),
+          padding: EdgeInsets.all(forDesktop ? 8.0 : 6.0),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -124,7 +141,7 @@ class PlayingCardWidget extends StatelessWidget {
                 ? [const Color(0xFF2A2A3A), const Color(0xFF1A1A28)]
                 : [Colors.white, Colors.grey.shade100],
             ),
-            borderRadius: BorderRadius.circular(12.0),
+            borderRadius: BorderRadius.circular(forDesktop ? 16.0 : 12.0),
             boxShadow: isDarkMode ? [
               BoxShadow(
                 color: Colors.black.withOpacity(0.5),
@@ -136,14 +153,14 @@ class PlayingCardWidget extends StatelessWidget {
           child: FittedBox(
             fit: BoxFit.contain,
             child: SizedBox(
-              width: isSmallScreen ? 50 : 70,
-              height: isSmallScreen ? 75 : 105,
+              width: forDesktop ? 90 : (isSmallScreen ? 50 : 70),
+              height: forDesktop ? 135 : (isSmallScreen ? 75 : 105),
               child: Column(
                 children: [
                   Align(
                     alignment: Alignment.topLeft,
                     child: Container(
-                      padding: const EdgeInsets.all(2),
+                      padding: EdgeInsets.all(forDesktop ? 4.0 : 2.0),
                       decoration: BoxDecoration(
                         color: isDarkMode ? const Color(0xFF333344).withOpacity(0.7) : null,
                         borderRadius: BorderRadius.circular(4),
@@ -151,7 +168,7 @@ class PlayingCardWidget extends StatelessWidget {
                       child: Text(
                         '$index',
                         style: TextStyle(
-                          fontSize: isSmallScreen ? 8 : 10, 
+                          fontSize: forDesktop ? 12 : (isSmallScreen ? 8 : 10), 
                           color: isDarkMode ? const Color(0xFFBBBBCC) : Colors.grey,
                           fontWeight: FontWeight.w500,
                         ),
@@ -162,7 +179,7 @@ class PlayingCardWidget extends StatelessWidget {
                   Text(
                     card.value,
                     style: TextStyle(
-                      fontSize: isSmallScreen ? 18 : 24,
+                      fontSize: forDesktop ? 32 : (isSmallScreen ? 18 : 24),
                       fontWeight: FontWeight.bold,
                       color: cardColor,
                       shadows: isDarkMode ? [
@@ -177,7 +194,7 @@ class PlayingCardWidget extends StatelessWidget {
                   Text(
                     Deck.getSuitSymbol(card.suit),
                     style: TextStyle(
-                      fontSize: isSmallScreen ? 24 : 32,
+                      fontSize: forDesktop ? 40 : (isSmallScreen ? 24 : 32),
                       color: cardColor,
                       shadows: isDarkMode ? [
                         Shadow(

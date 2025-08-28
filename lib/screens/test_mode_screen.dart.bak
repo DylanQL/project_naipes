@@ -1,0 +1,1505 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import '../models/card_model.dart';
+import '../services/game_service.dart';
+import '../services/database_service.dart';
+import '../models/score_model.dart';
+import '../widgets/card_grid.dart';
+
+class TestModeScreen extends StatefulWidget {
+  final GameService gameService;
+  
+  const TestModeScreen({super.key, required this.gameService});
+
+  @override
+  State<TestModeScreen> createState() => _TestModeScreenState();
+}
+
+class _TestModeScreenState extends State<TestModeScreen> {
+  List<PlayingCard> deck = Deck.generateDeck();
+  List<PlayingCard> guessedDeck = [];
+  bool isLoading = true;
+  bool isTestInProgress = false;
+  bool isTestCompleted = false;
+  int score = 0;
+  
+  // Timer variables
+  Timer? _timer;
+  int _secondsElapsed = 0;
+  
+  final TextEditingController nameController = TextEditingController();
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadDeck();
+  }
+  
+  @override
+  void dispose() {
+    _timer?.cancel();
+    nameController.dispose();
+    super.dispose();
+  }
+  
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        _secondsElapsed++;
+      });
+    });
+  }
+  
+  void _stopTimer() {
+    _timer?.cancel();
+  }
+  
+  String get formattedTime {
+    final minutes = (_secondsElapsed ~/ 60).toString().padLeft(2, '0');
+    final seconds = (_secondsElapsed % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
+  Future<void> _loadDeck() async {
+    setState(() {
+      isLoading = true;
+    });
+    
+    await widget.gameService.loadCurrentDeck();
+    
+    setState(() {
+      isLoading = false;
+    });
+  }
+  
+  void _startTest() {
+    setState(() {
+      guessedDeck = [];
+      isTestInProgress = true;
+      isTestCompleted = false;
+      _secondsElapsed = 0;
+    });
+    _startTimer();
+  }
+  
+  void _addCardToGuess(PlayingCard card) {
+    if (guessedDeck.contains(card)) {
+      return;
+    }
+    
+    setState(() {
+      guessedDeck.add(card);
+    });
+    
+    // Check if all cards have been added
+    if (guessedDeck.length == 52) {
+      _completeTest();
+    }
+  }
+  
+  void _removeCardFromGuess(int index) {
+    setState(() {
+      guessedDeck.removeAt(index);
+    });
+  }
+  
+  void _completeTest() {
+    _stopTimer();
+    
+    // Calculate score
+    final score = widget.gameService.calculateScore(guessedDeck);
+    
+    setState(() {
+      this.score = score;
+      isTestInProgress = false;
+      isTestCompleted = true;
+    });
+  }
+  
+  Future<void> _saveScore() async {
+    if (nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor ingresa tu nombre')),
+      );
+      return;
+    }
+    
+    final scoreRecord = ScoreRecord(
+      playerName: nameController.text,
+      score: score,
+      timeInSeconds: _secondsElapsed,
+      date: DateTime.now(),
+    );
+    
+    await DatabaseService().saveScore(scoreRecord);
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('¡Puntuación guardada!')),
+      );
+      Navigator.pop(context);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Test Mode'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        actions: [
+          if (isTestInProgress)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                formattedTime,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+        ],
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _buildContent(),
+    );
+  }
+  
+  Widget _buildContent() {
+    final orientation = MediaQuery.of(context).orientation;
+    final screenSize = MediaQuery.of(context).size;
+    final isDesktop = screenSize.width > 1024;
+    
+    if (!isTestInProgress && !isTestCompleted) {
+      return Center(
+        child: Container(
+          constraints: BoxConstraints(maxWidth: isDesktop ? 600 : 400),
+          padding: EdgeInsets.all(isDesktop ? 40 : 20),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              )
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.psychology,
+                size: isDesktop ? 80 : 60,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Ready to test your memory?',
+                style: TextStyle(
+                  fontSize: isDesktop ? 28 : 22, 
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Try to recall all 52 cards in the correct order',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: isDesktop ? 18 : 16,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                ),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: _startTest,
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isDesktop ? 48 : 32, 
+                    vertical: isDesktop ? 20 : 16
+                  ),
+                  elevation: 4,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text(
+                  'Start Test', 
+                  style: TextStyle(fontSize: isDesktop ? 20 : 18)
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else if (isTestInProgress) {
+      // Layout changes based on device type and orientation
+      if (isDesktop) {
+        // Desktop optimized layout
+        return _buildDesktopTestLayout();
+      } else if (orientation == Orientation.landscape) {
+        // Landscape layout for mobile/tablet
+        return _buildLandscapeTestLayout();
+      } else {
+        // Portrait layout for mobile
+        return _buildPortraitTestLayout();
+      }
+    } else {
+      // Test completed result screen
+      return _buildResultScreen(isDesktop);
+    }
+  }
+  
+  // Nuevo layout optimizado para pantallas de escritorio
+  Widget _buildDesktopTestLayout() {
+    return Row(
+      children: [
+        // Izquierda: Panel con cartas seleccionadas y controles
+        Container(
+          width: 300,
+          margin: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              )
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.timer, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Text(
+                          formattedTime,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Selected Cards: ${guessedDeck.length}/52',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Complete test button
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: ElevatedButton.icon(
+                  onPressed: guessedDeck.length == 52 ? _completeTest : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                    foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    elevation: 3,
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
+                  icon: const Icon(Icons.check_circle),
+                  label: const Text(
+                    'Complete Test',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              
+              // Información
+              if (guessedDeck.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              size: 18,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'How to use',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          '1. Click cards in the order you remember them',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          '2. Click a selected card to remove it',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          '3. Complete the test when done',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              
+              // Lista de cartas seleccionadas
+              Expanded(
+                child: guessedDeck.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No cards selected yet',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: GridView.builder(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          childAspectRatio: 0.7,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                        ),
+                        itemCount: guessedDeck.length,
+                        itemBuilder: (context, index) {
+                          final card = guessedDeck[index];
+                          return GestureDetector(
+                            onTap: () => _removeCardFromGuess(index),
+                            child: Tooltip(
+                              message: 'Tap to remove',
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                    ? const Color(0xFF2A2A3A)
+                                    : Colors.white,
+                                  border: Border.all(
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                      ? const Color(0xFF4A4A6A)
+                                      : Colors.grey.shade300,
+                                    width: Theme.of(context).brightness == Brightness.dark ? 1.0 : 0.5,
+                                  ),
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  gradient: Theme.of(context).brightness == Brightness.dark
+                                    ? const LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [Color(0xFF2A2A3A), Color(0xFF1A1A28)],
+                                      )
+                                    : null,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                        ? Colors.black54
+                                        : Colors.black12,
+                                      blurRadius: Theme.of(context).brightness == Brightness.dark ? 4 : 2,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      card.value,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: card.suit == 'H' || card.suit == 'D'
+                                            ? (Theme.of(context).brightness == Brightness.dark 
+                                                ? const Color(0xFFFF7070)
+                                                : Colors.red.shade700)
+                                            : (Theme.of(context).brightness == Brightness.dark 
+                                                ? const Color(0xFFDDDDDD)
+                                                : Colors.black87),
+                                      ),
+                                    ),
+                                    Text(
+                                      Deck.getSuitSymbol(card.suit),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: card.suit == 'H' || card.suit == 'D'
+                                            ? (Theme.of(context).brightness == Brightness.dark 
+                                                ? const Color(0xFFFF7070)
+                                                : Colors.red.shade700)
+                                            : (Theme.of(context).brightness == Brightness.dark 
+                                                ? const Color(0xFFDDDDDD)
+                                                : Colors.black87),
+                                      ),
+                                    ),
+                                    Container(
+                                      width: double.infinity,
+                                      color: Theme.of(context).brightness == Brightness.dark 
+                                        ? const Color(0xFF1A1A28)
+                                        : Colors.grey.shade100,
+                                      padding: const EdgeInsets.symmetric(vertical: 2),
+                                      child: Text(
+                                        '${index + 1}',
+                                        style: TextStyle(
+                                          fontSize: 10, 
+                                          fontWeight: FontWeight.w500,
+                                          color: Theme.of(context).brightness == Brightness.dark
+                                            ? const Color(0xFFAAAABB)
+                                            : Colors.grey,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+              ),
+            ],
+          ),
+        ),
+        
+        // Derecha: Grid de cartas para seleccionar
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Select Cards in Order',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: CardGrid(
+                    deck: deck,
+                    interactive: true,
+                    forDesktop: true,
+                    onCardTap: _addCardToGuess,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Layout para dispositivos móviles en modo landscape
+  Widget _buildLandscapeTestLayout() {
+    return Row(
+      children: [
+        // Left side: Cards grid
+        Expanded(
+          flex: 3,
+          child: CardGrid(
+            deck: deck,
+            interactive: true,
+            onCardTap: _addCardToGuess,
+          ),
+        ),
+        
+        // Right side: Selected cards and controls
+        Expanded(
+          flex: 2,
+          child: Column(
+            children: [
+              // Selected cards header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Selected Cards: ${guessedDeck.length}/52',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: guessedDeck.length == 52 ? _completeTest : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      ),
+                      child: const Text('Complete Test'),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Selected cards display
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(8.0),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF191925)
+                      : Colors.grey.shade100,
+                    border: Theme.of(context).brightness == Brightness.dark
+                      ? Border(
+                          bottom: BorderSide(
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                            width: 1.0,
+                          ),
+                        )
+                      : null,
+                  ),
+                  child: guessedDeck.isEmpty
+                    ? Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).brightness == Brightness.dark
+                              ? Theme.of(context).colorScheme.primary.withOpacity(0.15)
+                              : Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.touch_app,
+                                size: 18,
+                                color: Theme.of(context).brightness == Brightness.dark
+                                  ? Theme.of(context).colorScheme.primary.withOpacity(0.7)
+                                  : Theme.of(context).colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  'Select cards in the correct order',
+                                  style: TextStyle(
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                      ? Theme.of(context).colorScheme.onSurface.withOpacity(0.8)
+                                      : Colors.grey.shade700,
+                                    fontStyle: FontStyle.italic,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    // For landscape, display selected cards in a grid
+                    : GridView.builder(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          childAspectRatio: 0.7,
+                          crossAxisSpacing: 4,
+                          mainAxisSpacing: 4,
+                        ),
+                        itemCount: guessedDeck.length,
+                        itemBuilder: (context, index) {
+                          final card = guessedDeck[index];
+                          return GestureDetector(
+                            onTap: () => _removeCardFromGuess(index),
+                            child: Tooltip(
+                              message: 'Tap to remove',
+                              child: Container(
+                                margin: const EdgeInsets.all(2.0),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                    ? const Color(0xFF2A2A3A)
+                                    : Colors.white,
+                                  border: Border.all(
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                      ? const Color(0xFF4A4A6A)
+                                      : Colors.grey.shade300,
+                                    width: Theme.of(context).brightness == Brightness.dark ? 1.0 : 0.5,
+                                  ),
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  gradient: Theme.of(context).brightness == Brightness.dark
+                                    ? const LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [Color(0xFF2A2A3A), Color(0xFF1A1A28)],
+                                      )
+                                    : null,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                        ? Colors.black54
+                                        : Colors.black12,
+                                      blurRadius: Theme.of(context).brightness == Brightness.dark ? 4 : 2,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      card.value,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: card.suit == 'H' || card.suit == 'D'
+                                            ? (Theme.of(context).brightness == Brightness.dark 
+                                                ? const Color(0xFFFF7070)
+                                                : Colors.red.shade700)
+                                            : (Theme.of(context).brightness == Brightness.dark 
+                                                ? const Color(0xFFDDDDDD)
+                                                : Colors.black87),
+                                        shadows: Theme.of(context).brightness == Brightness.dark
+                                          ? [Shadow(color: Colors.black54, blurRadius: 1, offset: const Offset(0, 1))]
+                                          : null,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      Deck.getSuitSymbol(card.suit),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: card.suit == 'H' || card.suit == 'D'
+                                            ? (Theme.of(context).brightness == Brightness.dark 
+                                                ? const Color(0xFFFF7070)
+                                                : Colors.red.shade700)
+                                            : (Theme.of(context).brightness == Brightness.dark 
+                                                ? const Color(0xFFDDDDDD)
+                                                : Colors.black87),
+                                        shadows: Theme.of(context).brightness == Brightness.dark
+                                          ? [Shadow(color: Colors.black54, blurRadius: 1, offset: const Offset(0, 1))]
+                                          : null,
+                                      ),
+                                    ),
+                                    Container(
+                                      width: double.infinity,
+                                      color: Theme.of(context).brightness == Brightness.dark 
+                                        ? const Color(0xFF1A1A28)
+                                        : Colors.grey.shade100,
+                                      padding: const EdgeInsets.symmetric(vertical: 2),
+                                      child: Text(
+                                        '${index + 1}',
+                                        style: TextStyle(
+                                          fontSize: 10, 
+                                          fontWeight: FontWeight.w500,
+                                          color: Theme.of(context).brightness == Brightness.dark
+                                            ? const Color(0xFFAAAABB)
+                                            : Colors.grey,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+  // Layout para dispositivos móviles en modo portrait
+  Widget _buildPortraitTestLayout() {
+    return Column(
+      children: [
+        Expanded(
+          flex: 1,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF191925)
+                : Colors.grey.shade100,
+              border: Theme.of(context).brightness == Brightness.dark
+                ? Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      width: 1.0,
+                    ),
+                  )
+                : null,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                  child: Text(
+                    'Selected Cards: ${guessedDeck.length}/52',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: guessedDeck.isEmpty
+                    ? Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).brightness == Brightness.dark
+                              ? Theme.of(context).colorScheme.primary.withOpacity(0.15)
+                              : Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.touch_app,
+                                size: 18,
+                                color: Theme.of(context).brightness == Brightness.dark
+                                  ? Theme.of(context).colorScheme.primary.withOpacity(0.7)
+                                  : Theme.of(context).colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Select cards in the correct order',
+                                style: TextStyle(
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                    ? Theme.of(context).colorScheme.onSurface.withOpacity(0.8)
+                                    : Colors.grey.shade700,
+                                  fontStyle: FontStyle.italic,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: guessedDeck.length,
+                        itemBuilder: (context, index) {
+                          final card = guessedDeck[index];
+                          return GestureDetector(
+                            onTap: () => _removeCardFromGuess(index),
+                            child: Tooltip(
+                              message: 'Tap to remove',
+                              child: Container(
+                                width: 50,
+                                margin: const EdgeInsets.all(4.0),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                    ? const Color(0xFF2A2A3A)
+                                    : Colors.white,
+                                  border: Border.all(
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                      ? const Color(0xFF4A4A6A)
+                                      : Colors.grey.shade300,
+                                    width: Theme.of(context).brightness == Brightness.dark ? 1.0 : 0.5,
+                                  ),
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  gradient: Theme.of(context).brightness == Brightness.dark
+                                    ? const LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [Color(0xFF2A2A3A), Color(0xFF1A1A28)],
+                                      )
+                                    : null,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                        ? Colors.black54
+                                        : Colors.black12,
+                                      blurRadius: Theme.of(context).brightness == Brightness.dark ? 4 : 2,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      card.value,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: card.suit == 'H' || card.suit == 'D'
+                                            ? (Theme.of(context).brightness == Brightness.dark 
+                                                ? const Color(0xFFFF7070)
+                                                : Colors.red.shade700)
+                                            : (Theme.of(context).brightness == Brightness.dark 
+                                                ? const Color(0xFFDDDDDD)
+                                                : Colors.black87),
+                                        shadows: Theme.of(context).brightness == Brightness.dark
+                                          ? [Shadow(color: Colors.black54, blurRadius: 1, offset: const Offset(0, 1))]
+                                          : null,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      Deck.getSuitSymbol(card.suit),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: card.suit == 'H' || card.suit == 'D'
+                                            ? (Theme.of(context).brightness == Brightness.dark 
+                                                ? const Color(0xFFFF7070)
+                                                : Colors.red.shade700)
+                                            : (Theme.of(context).brightness == Brightness.dark 
+                                                ? const Color(0xFFDDDDDD)
+                                                : Colors.black87),
+                                        shadows: Theme.of(context).brightness == Brightness.dark
+                                          ? [Shadow(color: Colors.black54, blurRadius: 1, offset: const Offset(0, 1))]
+                                          : null,
+                                      ),
+                                    ),
+                                    Container(
+                                      width: double.infinity,
+                                      color: Theme.of(context).brightness == Brightness.dark 
+                                        ? const Color(0xFF1A1A28)
+                                        : Colors.grey.shade100,
+                                      padding: const EdgeInsets.symmetric(vertical: 2),
+                                      child: Text(
+                                        '${index + 1}',
+                                        style: TextStyle(
+                                          fontSize: 10, 
+                                          fontWeight: FontWeight.w500,
+                                          color: Theme.of(context).brightness == Brightness.dark
+                                            ? const Color(0xFFAAAABB)
+                                            : Colors.grey,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 3,
+          child: CardGrid(
+            deck: deck,
+            interactive: true,
+            onCardTap: _addCardToGuess,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: ElevatedButton(
+            onPressed: guessedDeck.length == 52 ? _completeTest : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              minimumSize: const Size(double.infinity, 0),
+            ),
+            child: const Text('Complete Test', style: TextStyle(fontSize: 16)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Pantalla de resultados al terminar el test
+  Widget _buildResultScreen(bool isDesktop) {
+    final orientation = MediaQuery.of(context).orientation;
+    final accuracyPercent = (score / 52 * 100).toInt();
+    final minutes = (_secondsElapsed ~/ 60).toString().padLeft(2, '0');
+    final seconds = (_secondsElapsed % 60).toString().padLeft(2, '0');
+    
+    // Para pantallas de escritorio, usamos un diseño más espacioso
+    if (isDesktop) {
+      return Center(
+        child: Container(
+          width: 600,
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              )
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Test Completed!',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 32),
+              
+              // Resultados en tarjetas
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildResultCard(
+                    title: 'Score',
+                    value: '$score/52',
+                    icon: Icons.stars,
+                    iconColor: Colors.amber,
+                  ),
+                  const SizedBox(width: 24),
+                  _buildResultCard(
+                    title: 'Accuracy',
+                    value: '$accuracyPercent%',
+                    icon: Icons.check_circle,
+                    iconColor: Colors.green,
+                  ),
+                  const SizedBox(width: 24),
+                  _buildResultCard(
+                    title: 'Time',
+                    value: '$minutes:$seconds',
+                    icon: Icons.timer,
+                    iconColor: Colors.blue,
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 40),
+              // Campo para guardar puntaje
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Your Name',
+                        hintText: 'Enter your name to save score',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    onPressed: _saveScore,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    icon: const Icon(Icons.save),
+                    label: const Text('Save Score'),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 32),
+              // Botones de acción
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Back to Home'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    onPressed: _startTest,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Try Again'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    // Para dispositivos móviles, usamos un diseño compacto
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.check_circle, size: 60, color: Colors.green),
+                const SizedBox(height: 16),
+                Text(
+                  'Test Completed!',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Resultados
+                Text(
+                  'Your score: $score/52',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'Accuracy: $accuracyPercent%',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                Text(
+                  'Time: $minutes:$seconds',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                
+                const SizedBox(height: 24),
+                // Campo para guardar puntaje
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Your Name',
+                    hintText: 'Enter your name to save score',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _saveScore,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 0),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  icon: const Icon(Icons.save),
+                  label: const Text('Save Score'),
+                ),
+                
+                const SizedBox(height: 16),
+                // Botones de acción
+                if (orientation == Orientation.portrait)
+                  Column(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 0),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        icon: const Icon(Icons.arrow_back),
+                        label: const Text('Back to Home'),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: _startTest,
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 0),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Try Again'),
+                      ),
+                    ],
+                  )
+                else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.arrow_back),
+                          label: const Text('Back to Home'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _startTest,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Try Again'),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  
+  // Widget para las tarjetas de resultados en escritorio
+  Widget _buildResultCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color iconColor,
+  }) {
+    return Container(
+      width: 150,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 40, color: iconColor),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                        ? const Color(0xFF2A2A3A)
+                                        : Colors.white,
+                                      border: Border.all(
+                                        color: Theme.of(context).brightness == Brightness.dark
+                                          ? const Color(0xFF4A4A6A)
+                                          : Colors.grey.shade300,
+                                        width: Theme.of(context).brightness == Brightness.dark ? 1.0 : 0.5,
+                                      ),
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      gradient: Theme.of(context).brightness == Brightness.dark
+                                        ? const LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [Color(0xFF2A2A3A), Color(0xFF1A1A28)],
+                                          )
+                                        : null,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Theme.of(context).brightness == Brightness.dark
+                                            ? Colors.black54
+                                            : Colors.black12,
+                                          blurRadius: Theme.of(context).brightness == Brightness.dark ? 4 : 2,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          card.value,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: card.suit == 'H' || card.suit == 'D'
+                                                ? (Theme.of(context).brightness == Brightness.dark 
+                                                    ? const Color(0xFFFF7070)
+                                                    : Colors.red.shade700)
+                                                : (Theme.of(context).brightness == Brightness.dark 
+                                                    ? const Color(0xFFDDDDDD)
+                                                    : Colors.black87),
+                                            shadows: Theme.of(context).brightness == Brightness.dark
+                                              ? [Shadow(color: Colors.black54, blurRadius: 1, offset: const Offset(0, 1))]
+                                              : null,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          Deck.getSuitSymbol(card.suit),
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            color: card.suit == 'H' || card.suit == 'D'
+                                                ? (Theme.of(context).brightness == Brightness.dark 
+                                                    ? const Color(0xFFFF7070)
+                                                    : Colors.red.shade700)
+                                                : (Theme.of(context).brightness == Brightness.dark 
+                                                    ? const Color(0xFFDDDDDD)
+                                                    : Colors.black87),
+                                            shadows: Theme.of(context).brightness == Brightness.dark
+                                              ? [Shadow(color: Colors.black54, blurRadius: 1, offset: const Offset(0, 1))]
+                                              : null,
+                                          ),
+                                        ),
+                                        Container(
+                                          width: double.infinity,
+                                          color: Theme.of(context).brightness == Brightness.dark 
+                                            ? const Color(0xFF1A1A28)
+                                            : Colors.grey.shade100,
+                                          padding: const EdgeInsets.symmetric(vertical: 2),
+                                          child: Text(
+                                            '${index + 1}',
+                                            style: TextStyle(
+                                              fontSize: 10, 
+                                              fontWeight: FontWeight.w500,
+                                              color: Theme.of(context).brightness == Brightness.dark
+                                                ? const Color(0xFFAAAABB)
+                                                : Colors.grey,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 3,
+              child: CardGrid(
+                deck: deck,
+                interactive: true,
+                onCardTap: _addCardToGuess,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Text(
+                    'Selected: ${guessedDeck.length}/52',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  ElevatedButton(
+                    onPressed: guessedDeck.length == 52 ? _completeTest : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Complete Test'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      }
+    } else {
+      // Test completed screen - adapt to orientation
+      if (orientation == Orientation.landscape) {
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Row(
+            children: [
+              // Left side - results
+              Expanded(
+                flex: 1,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Test Complete!',
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Your score: $score/52',
+                      style: const TextStyle(fontSize: 20),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Time: $formattedTime',
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Right side - save form
+              Expanded(
+                flex: 1,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Enter your name to save your score:',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                      child: TextField(
+                        controller: nameController,
+                        decoration: const InputDecoration(
+                          hintText: 'Your name',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _saveScore,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      ),
+                      child: const Text('Save Score', style: TextStyle(fontSize: 18)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      } else {
+        // Portrait layout for test completed screen (original)
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Test Complete!',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Your score: $score/52',
+                  style: const TextStyle(fontSize: 20),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Time: $formattedTime',
+                  style: const TextStyle(fontSize: 18),
+                ),
+                const SizedBox(height: 32),
+                const Text('Enter your name to save your score:'),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    hintText: 'Your name',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _saveScore,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  ),
+                  child: const Text('Save Score', style: TextStyle(fontSize: 18)),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    }
+  }
+}

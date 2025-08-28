@@ -580,9 +580,10 @@ class _TestModeScreenState extends State<TestModeScreen> {
         Expanded(
           flex: 5,
           child: CardGrid(
-            deck: deck,
+            cards: deck,
             onCardTap: (card) => _addCardToGuess(card),
-            interactive: true,
+            selectionMode: true,
+            selectedCards: guessedDeck,
           ),
         ),
       ],
@@ -683,9 +684,10 @@ class _TestModeScreenState extends State<TestModeScreen> {
         // Abajo: Grid de cartas para seleccionar
         Expanded(
           child: CardGrid(
-            deck: deck,
+            cards: deck,
             onCardTap: (card) => _addCardToGuess(card),
-            interactive: true,
+            selectionMode: true,
+            selectedCards: guessedDeck,
           ),
         ),
       ],
