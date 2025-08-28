@@ -1,20 +1,20 @@
-FROM debian:latest AS build-env
+FROM debian:bullseye AS build-env
 
 # Instalar dependencias
 RUN apt-get update 
-RUN apt-get install -y curl git wget unzip libgconf-2-4 gdb libstdc++6 libglu1-mesa fonts-droid-fallback lib32stdc++6 python3 psmisc
+RUN apt-get install -y curl git wget unzip gdb libstdc++6 libglu1-mesa fonts-droid lib32stdc++6 python3 psmisc libgtk-3-0 xz-utils
 RUN apt-get clean
 
-# Descargar Flutter SDK
-RUN git clone https://github.com/flutter/flutter.git /usr/local/flutter
+# Descargar Flutter SDK - Usamos una versión específica para mayor estabilidad
+RUN git clone -b stable https://github.com/flutter/flutter.git /usr/local/flutter
 
 # Añadir flutter al PATH
 ENV PATH="/usr/local/flutter/bin:/usr/local/flutter/bin/cache/dart-sdk/bin:${PATH}"
 
-# Ejecutar flutter doctor
+# Ejecutar flutter doctor y preparar el entorno para web
 RUN flutter doctor -v
-RUN flutter channel stable
-RUN flutter upgrade
+RUN flutter config --enable-web
+RUN flutter precache --web
 
 # Copiar los archivos del proyecto
 COPY . /app/

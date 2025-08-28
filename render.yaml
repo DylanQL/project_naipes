@@ -3,8 +3,9 @@ services:
   - type: web
     name: project-naipes
     env: docker
+    runtime: docker
     buildCommand: docker build -t project-naipes .
-    startCommand: docker run -p 80:80 project-naipes
+    startCommand: docker run --init -p $PORT:80 project-naipes
     envVars:
       - key: FLUTTER_BASE_HREF
         value: /
