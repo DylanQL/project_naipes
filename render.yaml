@@ -1,0 +1,11 @@
+services:
+  # Servicio web
+  - type: web
+    name: project-naipes
+    env: docker
+    buildCommand: docker build -t project-naipes .
+    startCommand: docker run -p 80:80 project-naipes
+    envVars:
+      - key: FLUTTER_BASE_HREF
+        value: /
+    healthCheckPath: /
